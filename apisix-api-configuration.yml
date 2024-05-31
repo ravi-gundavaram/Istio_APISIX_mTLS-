@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apisix-api-config
+  namespace: apisix
+data:
+  apis.json: |
+    [
+      {
+        "uri": "/helloworld1/*",
+        "upstream": {
+          "type": "roundrobin",
+          "nodes": {
+            "istio-ingressgateway.istio-system.svc.cluster.local:443": 1
+          }
+        },
+        "plugins": {
+          "proxy-rewrite": {
+            "scheme": "https",
+            "host": "helloworld1.default.svc.cluster.local"
+          }
+        }
+      },
+      {
+        "uri": "/helloworld2/*",
+        "upstream": {
+          "type": "roundrobin",
+          "nodes": {
+            "istio-ingressgateway.istio-system.svc.cluster.local:443": 1
+          }
+        },
+        "plugins": {
+          "proxy-rewrite": {
+            "scheme": "https",
+            "host": "helloworld2.default.svc.cluster.local"
+          }
+        }
+      }
+    ]

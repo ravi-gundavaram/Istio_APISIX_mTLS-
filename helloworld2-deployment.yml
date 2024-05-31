@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworld2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helloworld2
+  template:
+    metadata:
+      labels:
+        app: helloworld2
+    spec:
+      containers:
+      - name: helloworld2
+        image: ravikumargundaar/helloworld2:latest3
+        ports:
+        - containerPort: 82
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helloworld2
+spec:
+  ports:
+  - port: 80
+    targetPort: 82
+  selector:
+    app: helloworld2
