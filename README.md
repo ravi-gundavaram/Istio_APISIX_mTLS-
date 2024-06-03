@@ -55,76 +55,6 @@ helm install apisix apisix/apisix --namespace apisix
 Step 3: Deploy Backend Services (srv1 and srv2)
 Create Dockerfiles and application files for srv1 and srv2:
 
-Dockerfile:
-
-Dockerfile
-
-# Use an official Python runtime as a parent image
-FROM python:3.12-slim
-
-# Set the working directory in the container
-WORKDIR /usr/src/app
-
-# Argument to determine the service
-ARG SERVICE_NAME
-
-# Copy the requirements file to the working directory
-COPY ${SERVICE_NAME}/requirements.txt ./
-
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application code to the working directory
-COPY ${SERVICE_NAME}/ .
-
-# Expose port 80
-EXPOSE 80
-
-# Define environment variable for Flask
-ENV FLASK_APP=app.py
-
-# Run the application
-CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]
-requirements.txt:
-
-txt
-
-Flask==3.0.3
-app.py for srv1:
-
-python
-
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def hello_world():
-    return 'Hello, World from srv1!'
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
-app.py for srv2:
-
-python
-Copy code
-from flask import Flask
-
-app = Flask(__name__)
-
-@app.route('/')
-def hello_world():
-    return 'Hello, World from srv2!'
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
-Build and Push Docker Images:
-
-
-docker build --build-arg SERVICE_NAME=helloworld1 -t your
-
-
- -->
 # kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.crds.yaml
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
@@ -151,3 +81,38 @@ Use a tool like curl to make requests to the APISIX gateway:
 
 curl -k https://<APISIX_GATEWAY_IP>/helloworld1/
 curl -k https://<APISIX_GATEWAY_IP>/helloworld2/
+# Verify Certificates
+Check that the certificates have been issued and are being used by the services
+
+kubectl describe certificate apisix-cert -n apisix
+kubectl get secret apisix-cert-tls -n apisix
+# Verify mTLS is Working
+To confirm that mTLS is working, you can follow these steps:
+
+a. Enable mTLS Logging
+Ensure that Istio is logging mTLS traffic. You can enable mTLS traffic logging in Istio by updating the Istio config:
+
+kubectl edit configmap istio -n istio-system
+
+# Add this below configuration to debug:
+data:
+  mesh: |
+    accessLogFile: "/dev/stdout"
+    accessLogFormat: '[%START_TIME%] %REQ(:METHOD)% %REQ(X-ENVOY-ORIGINAL-PATH?:PATH)% %PROTOCOL% %RESPONSE_CODE% %RESPONSE_FLAGS% %BYTES_RECEIVED% %BYTES_SENT% %DURATION% %UPSTREAM_HOST%'
+# Test With Invalid Certificates
+To further validate mTLS, you can attempt to make a request with invalid or no certificates and confirm that the request is denied.
+
+curl -k --cacert invalid_cert.pem https://<APISIX_GATEWAY_IP>/helloworld1/
+# Use a Client Certificate
+Generate a client certificate and use it to make a request, verifying that the request succeeds when a valid client certificate is used.
+
+# Generate a client certificate:
+
+# Follow the steps to create a client certificate using OpenSSL or a similar tool.
+
+openssl req -new -newkey rsa:2048 -nodes -keyout client.key -out client.csr
+openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365
+
+# Make a request using the client certificate:
+
+curl -k --cert client.crt --key client.key https://<APISIX_GATEWAY_IP>/helloworld1/
