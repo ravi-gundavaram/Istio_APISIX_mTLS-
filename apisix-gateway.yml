@@ -1,0 +1,25 @@
+apiVersion: apisix.apache.org/v2alpha1
+kind: ApisixRoute
+metadata:
+  name: helloworld-route
+  namespace: default
+spec:
+  http:
+    - name: rule1
+      match:
+        hosts:
+          - "*"
+        paths:
+          - /helloworld1/*
+      backends:
+        - serviceName: helloworld1
+          servicePort: 80
+    - name: rule2
+      match:
+        hosts:
+          - "*"
+        paths:
+          - /helloworld2/*
+      backends:
+        - serviceName: helloworld2
+          servicePort: 80
