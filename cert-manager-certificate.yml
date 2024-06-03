@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: apisix-cert
+  namespace: apisix
+spec:
+  secretName: apisix-cert-tls
+  dnsNames:
+  - '*.your-domain.com'
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+# please replace actual domain name in dnsNames field i tested in local if you want to tested in local you can use localhost.
