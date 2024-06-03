@@ -1,4 +1,4 @@
-<!-- Istio-APISIX-mTLS-K8S
+# Istio-APISIX-mTLS-K8S
 Project Overview
 This project demonstrates how to set up a Kubernetes environment with Istio and API SIX to implement secure communication between services using mutual TLS (mTLS). The setup includes:
 
@@ -28,37 +28,29 @@ Setup Instructions
 Step 1: Install Istio
 Download Istio:
 
-sh
-Copy code
+
 curl -L https://istio.io/downloadIstio | sh -
 cd istio-1.13.2
 export PATH=$PWD/bin:$PATH
 Install Istio:
 
-sh
-Copy code
 istioctl install --set profile=demo -y
 Label the default namespace for automatic sidecar injection:
 
-sh
-Copy code
+
 kubectl label namespace default istio-injection=enabled
 Step 2: Install API SIX
 Create a namespace for API SIX:
 
-sh
-Copy code
 kubectl create namespace apisix
 Add the API SIX Helm repository:
 
-sh
-Copy code
+
 helm repo add apisix https://charts.apiseven.com
 helm repo update
 Install API SIX:
 
-sh
-Copy code
+
 helm install apisix apisix/apisix --namespace apisix
 Step 3: Deploy Backend Services (srv1 and srv2)
 Create Dockerfiles and application files for srv1 and srv2:
@@ -66,7 +58,7 @@ Create Dockerfiles and application files for srv1 and srv2:
 Dockerfile:
 
 Dockerfile
-Copy code
+
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
@@ -96,12 +88,12 @@ CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=80"]
 requirements.txt:
 
 txt
-Copy code
+
 Flask==3.0.3
 app.py for srv1:
 
 python
-Copy code
+
 from flask import Flask
 
 app = Flask(__name__)
@@ -128,9 +120,34 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80)
 Build and Push Docker Images:
 
-sh
-Copy code
+
 docker build --build-arg SERVICE_NAME=helloworld1 -t your
 
 
  -->
+# kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.crds.yaml
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1
+# Apply the cert-manager-issuer.yml manifest to create the Let's Encrypt ClusterIssuer:
+
+kubectl apply -f cert-manager-issuer.yml
+# Create Certificate
+Apply the cert-manager-certificate.yml manifest to create the certificate for APISIX:
+
+kubectl apply -f cert-manager-certificate.yml
+
+kubectl apply -f helloworld1-deployment.yml
+kubectl apply -f helloworld2-deployment.yml
+kubectl apply -f apisix-gateway.yml
+kubectl apply -f istio-mtls.yml
+# Testing mTLS Communication
+Check if services are running:
+kubectl get pods
+kubectl get services
+# Access the services via APISIX:
+
+Use a tool like curl to make requests to the APISIX gateway:
+
+curl -k https://<APISIX_GATEWAY_IP>/helloworld1/
+curl -k https://<APISIX_GATEWAY_IP>/helloworld2/

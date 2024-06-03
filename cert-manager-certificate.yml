@@ -11,3 +11,8 @@ spec:
     name: letsencrypt
     kind: ClusterIssuer
 # please replace actual domain name in dnsNames field i tested in local if you want to tested in local you can use localhost.
+# command for generate certificate in local is please refer to README.md file.
+#kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v1.3.1/cert-manager.crds.yaml
+#helm repo add jetstack https://charts.jetstack.io
+#helm repo update
+#helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --version v1.3.1
